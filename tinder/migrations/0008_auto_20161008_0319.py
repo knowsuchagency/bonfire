@@ -36,8 +36,6 @@ def import_from_mongo(apps, schema_editor):
         'instagram_username': 'instagram_username',
         'mentions_snapchat': 'mentions_snapchat',
         'mentions_kik': 'mentions_kik',
-        '_photos': 'photos',
-
     }
 
     for person in tqdm(mentioned_snapchat):
@@ -45,11 +43,10 @@ def import_from_mongo(apps, schema_editor):
         # populate kwargs from person dictionary
         kwargs = {k: person[v] for k, v in fields.items()}
 
-        # add entire dict representation to _data field
-        kwargs.update({'_data': person})
-
         # initialize and persist user
         user = User(**kwargs)
+        user._data = person
+        user._photos = person.get('photos', [])
         user.save()
 
         # add user id to added list
