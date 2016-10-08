@@ -23,3 +23,6 @@ class User(models.Model):
 
     # json representation from tinder
     _data = models.TextField()
+
+    # interactions with bonfire
+    liked = models.BooleanField(default=False)
