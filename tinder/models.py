@@ -15,7 +15,7 @@ def fields(*args):
     return {arg: attr.ib() for arg in args}
 
 
-@attr.s(these=fields("name", "age"))
+@attr.s(these=fields("name", "age", "instagram_username"))
 class User(models.Model):
     """
     A basic class for a user.
@@ -44,6 +44,7 @@ class User(models.Model):
     from_other = models.BooleanField(default=False)
     # a dictionary representation from another source
     data = models.TextField(blank=True)
+    tinder_id = models.CharField(max_length=25)
 
 
     def __str__(self):
@@ -51,11 +52,11 @@ class User(models.Model):
 
     @property
     def photos(self):
-        self.get_photos()
+        return self._data['photos']
 
-    @property
-    def thumbnails(self):
-        return self.get_photos(width="84")
+    # @property
+    # def thumbnails(self):
+    #     return self.get_photos(width="84")
 
     @property
     def _data(self):
@@ -66,7 +67,7 @@ class User(models.Model):
         """
         factory method to initialize from pynder User class
         :param pynder_user: pynder.models.user.User
-        :return: Tinder.User
+        :return: cls
         """
         kwargs = dict(
             data = json.dumps(pynder_user.data),
@@ -81,21 +82,50 @@ class User(models.Model):
 
         return cls(**kwargs)
 
-    def get_photos(self, width=None):
-        photos_list = []
-        photos = self._data['photos']
-        for photo in photos:
-            if width is None:
-                photos_list.append(photo.get("url"))
-            else:
-                sizes = ["84", "172", "320", "640"]
-                if width not in sizes:
-                    print("Only support these widths: %s" % sizes)
-                    return None
-                for p in photo.get("processedFiles", []):
-                    if p.get("width", 0) == int(width):
-                        photos_list.append(p.get("url", None))
-        return photos_list
+    @classmethod
+    def from_mongo(cls, mongodict):
+        """
+        factory method to import from old mongo db dictionaries
+        :param mongodict: dictionary
+        :return: cls
+
+        """
+        fields = {
+            'name': 'name',
+            'age': 'age',
+            'bio': 'bio',
+            'distance': 'distance_mi',
+            'instagram_username': 'instagram_username',
+            'mentions_snapchat': 'mentions_snapchat',
+            'mentions_kik': 'mentions_kik',
+            'tinder_id': '_id',
+        }
+
+        kwargs = {k: mongodict[v] for k, v in fields.items()}
+        kwargs.update({
+            "liked": True,
+            "from_other": True,
+            "data": json.dumps(mongodict),
+        })
+
+        user, created = cls.get_or_create(**kwargs)
+        return user
+
+    # def get_photos(self, width=None):
+    #     photos_list = []
+    #     photos = self._data['photos']
+    #     for photo in photos:
+    #         if width is None:
+    #             photos_list.append(photo.get("url"))
+    #         else:
+    #             sizes = ["84", "172", "320", "640"]
+    #             if width not in sizes:
+    #                 print("Only support these widths: %s" % sizes)
+    #                 return None
+    #             for p in photo.get("processedFiles", []):
+    #                 if p.get("width", 0) == int(width):
+    #                     photos_list.append(p.get("url", None))
+    #     return photos_list
 
 
 

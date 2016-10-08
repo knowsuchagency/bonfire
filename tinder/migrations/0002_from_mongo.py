@@ -4,9 +4,6 @@ from __future__ import unicode_literals
 
 from django.db import migrations
 from pymongo import MongoClient
-from tqdm import tqdm
-
-import json
 
 
 def import_from_mongo(apps, schema_editor):
@@ -25,30 +22,10 @@ def import_from_mongo(apps, schema_editor):
         print(e)
 
     User = apps.get_model("tinder", "User")
+    for person in mentioned_snapchat:
+        # automatically save users
+        User.from_mongo(person)
 
-    # map of fields between (Django User : Mongo User)
-    fields = {
-        'name': 'name',
-        'age': 'age',
-        'bio': 'bio',
-        'distance': 'distance_mi',
-        'instagram_username': 'instagram_username',
-        'mentions_snapchat': 'mentions_snapchat',
-        'mentions_kik': 'mentions_kik',
-    }
-
-    for person in tqdm(mentioned_snapchat):
-
-        # populate kwargs from person dictionary
-        kwargs = {k: person[v] for k, v in fields.items()}
-        kwargs.update({
-            "liked": True,
-            "from_other": True,
-            "data": json.dumps(person),
-        })
-
-        # initialize and persist user
-        user, created = User.objects.get_or_create(**kwargs)
 
 
 
