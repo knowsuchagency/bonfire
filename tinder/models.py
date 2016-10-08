@@ -21,11 +21,13 @@ class User(models.Model):
     mentions_kik = models.BooleanField(default=False)
     mentions_instagram = models.BooleanField(default=False)
 
-    # interactions with bonfire
+    ## Programmatically set fields
     liked = models.BooleanField(default=False)
+    # Did this user come from somewhere other than bonfire?
+    from_other = models.BooleanField(default=False)
 
-    # non-django stuff
 
+    ## non-django fields
     # a list of urls to photos
     _photos = []
     # a dictionary representation when importing from elsewhere

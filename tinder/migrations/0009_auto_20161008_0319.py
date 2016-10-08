@@ -7,9 +7,6 @@ from pymongo import MongoClient
 from tqdm import tqdm
 
 
-# objects added to database in the migration
-added = []
-
 def import_from_mongo(apps, schema_editor):
     """
     Populate database with information from mongodb
@@ -42,15 +39,17 @@ def import_from_mongo(apps, schema_editor):
 
         # populate kwargs from person dictionary
         kwargs = {k: person[v] for k, v in fields.items()}
+        kwargs.update({
+            "liked": True,
+            "from_other": True,
+        })
 
         # initialize and persist user
         user, created = User.objects.get_or_create(**kwargs)
         user._data = person
         user._photos = person.get('photos', [])
+        user.save()
 
-        # add user id to added list
-        if created:
-            added.append(user.id)
 
 
 def undo(apps, schema_editor):
@@ -61,8 +60,7 @@ def undo(apps, schema_editor):
     :return:
     """
     User = apps.get_model('tinder', 'User')
-    db_alias = schema_editor.connection.alias
-    User.objects.filter(pk__in=added).delete()
+    User.objects.filter(from_other=True).delete()
 
 
 
@@ -71,7 +69,7 @@ def undo(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('tinder', '0007_remove_user_data'),
+        ('tinder', '0008_user_from_other'),
     ]
 
     operations = [
