@@ -22,7 +22,8 @@ class User(models.Model):
     mentions_instagram = models.BooleanField(default=False)
 
     # json representation from tinder
-    _data = models.TextField()
+    _data = dict()
+    data = models.TextField()
 
     # interactions with bonfire
     liked = models.BooleanField(default=False)

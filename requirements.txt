@@ -1,4 +1,4 @@
-amqp==1.4.9
+pipamqp==1.4.9
 anyjson==0.3.3
 billiard==3.3.0.23
 celery==3.1.24
@@ -9,3 +9,16 @@ python-dateutil==2.5.3
 pytz==2016.7
 requests==2.11.1
 six==1.10.0
+amqp==1.4.9
+anyjson==0.3.3
+billiard==3.3.0.23
+celery==3.1.24
+Django==1.10.2
+kombu==3.0.36
+pymongo==3.3.0
+pynder==0.0.11
+python-dateutil==2.5.3
+pytz==2016.7
+requests==2.11.1
+six==1.10.0
+tqdm==4.8.4
