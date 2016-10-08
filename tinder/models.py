@@ -26,8 +26,9 @@ class User(models.Model):
     name = models.CharField(max_length=30)
     age = models.IntegerField()
     bio = models.TextField(blank=True)
-    schools = models.CharField(max_length=50, blank=True)
-    jobs = models.CharField(max_length=50, blank=True)
+    schools = models.CharField(max_length=100, blank=True)
+    jobs = models.CharField(max_length=100, blank=True)
+    birth_date = models.DateField(blank=True, null=True)
     # distance in miles
     distance = models.FloatField(default=0.0)
 
@@ -44,15 +45,64 @@ class User(models.Model):
     # a dictionary representation from another source
     data = models.TextField(blank=True)
 
+
     def __str__(self):
         return self.__repr__()
 
     @property
     def photos(self):
-        if self.data:
-            d = json.loads(self.data)
-            return d.get('photos', [])
-        return []
+        self.get_photos()
+
+    @property
+    def thumbnails(self):
+        return self.get_photos(width="84")
+
+    @property
+    def _data(self):
+        return json.loads(self.data)
+
+    @classmethod
+    def from_pynder_user(cls, pynder_user):
+        """
+        factory method to initialize from pynder User class
+        :param pynder_user: pynder.models.user.User
+        :return: Tinder.User
+        """
+        kwargs = dict(
+            data = json.dumps(pynder_user.data),
+            name = pynder_user.name,
+            age = pynder_user.age,
+            bio = pynder_user.bio,
+            birth_date = pynder_user.birth_date,
+            jobs = pynder_user.jobs,
+            schools = pynder_user.schools,
+            instagram_username = pynder_user.instagram_username,
+        )
+
+        return cls(**kwargs)
+
+    def get_photos(self, width=None):
+        photos_list = []
+        photos = self._data['photos']
+        for photo in photos:
+            if width is None:
+                photos_list.append(photo.get("url"))
+            else:
+                sizes = ["84", "172", "320", "640"]
+                if width not in sizes:
+                    print("Only support these widths: %s" % sizes)
+                    return None
+                for p in photo.get("processedFiles", []):
+                    if p.get("width", 0) == int(width):
+                        photos_list.append(p.get("url", None))
+        return photos_list
+
+
+
+
+
+
+
 
 
 
