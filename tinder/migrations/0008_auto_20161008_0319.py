@@ -44,13 +44,13 @@ def import_from_mongo(apps, schema_editor):
         kwargs = {k: person[v] for k, v in fields.items()}
 
         # initialize and persist user
-        user = User(**kwargs)
+        user, created = User.objects.get_or_create(**kwargs)
         user._data = person
         user._photos = person.get('photos', [])
-        user.save()
 
         # add user id to added list
-        added.append(user.id)
+        if created:
+            added.append(user.id)
 
 
 def undo(apps, schema_editor):
@@ -61,9 +61,9 @@ def undo(apps, schema_editor):
     :return:
     """
     User = apps.get_model('tinder', 'User')
-    queryset = User.objects.filter(pk__in=added)
-    for user in queryset:
-        user.delete()
+    db_alias = schema_editor.connection.alias
+    User.objects.filter(pk__in=added).delete()
+
 
 
 
