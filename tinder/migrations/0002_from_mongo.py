@@ -5,6 +5,10 @@ from __future__ import unicode_literals
 from django.db import migrations
 from pymongo import MongoClient
 
+import tinder.models
+import logging
+
+logging.basicConfig(filename='migrations.log', level=logging.DEBUG)
 
 def import_from_mongo(apps, schema_editor):
     """
@@ -21,7 +25,14 @@ def import_from_mongo(apps, schema_editor):
         print("Unable to retrieve information from MongoDB")
         print(e)
 
+    # attempt to safely retrieve User model
+    # import directly if not possible
     User = apps.get_model("tinder", "User")
+    if not hasattr(User, 'from_mongo'):
+        logging.warning("User did not have proper attributes using app.get_model. Will import directly")
+        # logging.warning('User attributes:\n\t' + '\n\t'.join(str(a) for a in dir(User)))
+        User = tinder.models.User
+
     for person in mentioned_snapchat:
         # automatically save users
         User.from_mongo(person)

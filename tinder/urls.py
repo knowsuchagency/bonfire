@@ -15,6 +15,7 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
                   'mentions_kik',
                   'mentions_instagram',
                   'liked',
+                  'tinder_id',
                   )
 
 

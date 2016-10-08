@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.postgres.fields import JSONField
 from functools import partial
 import json
 import attr
@@ -25,7 +26,7 @@ class User(models.Model):
     # basic information
     name = models.CharField(max_length=30)
     age = models.IntegerField()
-    bio = models.TextField(blank=True)
+    bio = models.TextField(default="")
     schools = models.CharField(max_length=100, blank=True)
     jobs = models.CharField(max_length=100, blank=True)
     birth_date = models.DateField(blank=True, null=True)
@@ -33,7 +34,7 @@ class User(models.Model):
     distance = models.FloatField(default=0.0)
 
     # social media
-    instagram_username = models.CharField(max_length=30, blank=True)
+    instagram_username = models.CharField(max_length=30, default="None")
     mentions_snapchat = models.BooleanField(default=False)
     mentions_kik = models.BooleanField(default=False)
     mentions_instagram = models.BooleanField(default=False)
@@ -43,7 +44,7 @@ class User(models.Model):
     # Did this user come from somewhere other than bonfire?
     from_other = models.BooleanField(default=False)
     # a dictionary representation from another source
-    data = models.TextField(blank=True)
+    data = JSONField()
     tinder_id = models.CharField(max_length=25)
 
 
@@ -52,11 +53,8 @@ class User(models.Model):
 
     @property
     def photos(self):
-        return self._data['photos']
+        return self.data['photos']
 
-    # @property
-    # def thumbnails(self):
-    #     return self.get_photos(width="84")
 
     @property
     def _data(self):
@@ -69,8 +67,8 @@ class User(models.Model):
         :param pynder_user: pynder.models.user.User
         :return: cls
         """
-        kwargs = dict(
-            data = json.dumps(pynder_user.data),
+        fields = dict(
+            data = pynder_user.data,
             name = pynder_user.name,
             age = pynder_user.age,
             bio = pynder_user.bio,
@@ -79,6 +77,8 @@ class User(models.Model):
             schools = pynder_user.schools,
             instagram_username = pynder_user.instagram_username,
         )
+
+        kwargs = {k: v for k, v in fields.items() if v}
 
         return cls(**kwargs)
 
@@ -90,25 +90,23 @@ class User(models.Model):
         :return: cls
 
         """
-        fields = {
-            'name': 'name',
-            'age': 'age',
-            'bio': 'bio',
-            'distance': 'distance_mi',
-            'instagram_username': 'instagram_username',
-            'mentions_snapchat': 'mentions_snapchat',
-            'mentions_kik': 'mentions_kik',
-            'tinder_id': '_id',
-        }
+        fields = dict(
+            name = mongodict['name'],
+            age = mongodict['age'],
+            bio = mongodict['bio'],
+            distance = mongodict['distance_mi'],
+            instagram_username = mongodict['instagram_username'],
+            mentions_snapchat = mongodict['mentions_snapchat'],
+            mentions_kik = mongodict['mentions_kik'],
+            tinder_id = mongodict['_id'],
+            liked = True,
+            from_other = True,
+            data = mongodict,
+        )
 
-        kwargs = {k: mongodict[v] for k, v in fields.items()}
-        kwargs.update({
-            "liked": True,
-            "from_other": True,
-            "data": json.dumps(mongodict),
-        })
+        kwargs = {k: v for k, v in fields.items() if v}
 
-        user, created = cls.get_or_create(**kwargs)
+        user, created = cls.objects.get_or_create(**kwargs)
         return user
 
     # def get_photos(self, width=None):
