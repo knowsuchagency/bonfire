@@ -1,4 +1,5 @@
 from django.db import models
+import json
 
 class User(models.Model):
     """
@@ -25,13 +26,15 @@ class User(models.Model):
     liked = models.BooleanField(default=False)
     # Did this user come from somewhere other than bonfire?
     from_other = models.BooleanField(default=False)
+    # a dictionary representation from another source
+    data = models.TextField(blank=True)
+
+    @property
+    def photos(self):
+        if self.data:
+            d = json.loads(self.data)
+            return d.get('photos', [])
+        return []
 
 
-    ## non-django fields
-    # a list of urls to photos
-    _photos = []
-    # a dictionary representation when importing from elsewhere
-    _data = dict()
-    _schools = []
-    _jobs = []
 
