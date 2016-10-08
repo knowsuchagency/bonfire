@@ -21,9 +21,15 @@ class User(models.Model):
     mentions_kik = models.BooleanField(default=False)
     mentions_instagram = models.BooleanField(default=False)
 
-    # json representation from tinder
-    _data = dict()
-    data = models.TextField()
-
     # interactions with bonfire
     liked = models.BooleanField(default=False)
+
+    # non-django stuff
+
+    # a list of urls to photos
+    _photos = []
+    # a dictionary representation when importing from elsewhere
+    _data = dict()
+    _schools = []
+    _jobs = []
+
