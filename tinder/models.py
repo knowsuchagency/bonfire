@@ -10,7 +10,7 @@ import tinder
 import re
 
 # config logging
-logging.basicConfig(filename='tinder_models.log', level=logging.INFO)
+# logging.basicConfig(filename='tinder_models.log', level=logging.INFO)
 
 # freeze init to false on attrs
 attr.s = partial(attr.s, init=False)
@@ -107,7 +107,8 @@ class User(models.Model):
         try:
             return api.user_info(self.tinder_id)['results']
         except pynder.errors.RequestError as e:
-            logging.warning(e)
+            # logging.warning(e)
+            pass
         return None
 
     def update_self_from_tinder(self, api=None, token=None):

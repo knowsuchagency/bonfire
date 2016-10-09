@@ -15,9 +15,13 @@ django.setup()
 
 from tinder.models import User
 
-logging.basicConfig(filename='tinder.log',
-                    level=logging.DEBUG,
-                    format='%(asctime)s %(message)s')
+logging.basicConfig(
+                    # filename='tinder.log',
+                    level=logging.INFO,
+                    format='%(asctime)s %(message)s',
+                    handlers=[logging.FileHandler("tinder.log"),
+                              logging.StreamHandler()]
+                    )
 
 class Session(PynderSession):
 
@@ -37,7 +41,7 @@ class Session(PynderSession):
                 continue
             hopeful = hopefuls.pop()
             persisted = Session.like_and_persist(hopeful)
-            logging.info("liked and saved: ".format(persisted))
+            logging.info("liked and saved: {}".format(persisted))
 
     def like_until_you_drop(self):
         hopefuls = self.nearby_users()
