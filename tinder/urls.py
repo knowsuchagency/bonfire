@@ -16,6 +16,7 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
                   'mentions_instagram',
                   'liked',
                   'tinder_id',
+                  # 'data',
                   )
 
 

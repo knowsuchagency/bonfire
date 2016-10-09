@@ -1,8 +1,13 @@
 from django.db import models
-from django.contrib.postgres.fields import JSONField
+from django.contrib.postgres.fields import JSONField, ArrayField
 from functools import partial
-import json
+from pynder.api import TinderAPI
+import logging
+import pynder.errors
 import attr
+
+# config logging
+logging.basicConfig(filename='tinder_models.log', level=logging.DEBUG)
 
 # freeze init to false on attrs
 attr.s = partial(attr.s, init=False)
@@ -27,8 +32,12 @@ class User(models.Model):
     name = models.CharField(max_length=30)
     age = models.IntegerField()
     bio = models.TextField(default="")
-    schools = models.CharField(max_length=100, blank=True)
-    jobs = models.CharField(max_length=100, blank=True)
+    schools = ArrayField(
+        models.CharField(max_length=60, blank=True)
+    )
+    jobs = ArrayField(
+        models.CharField(max_length=60, blank=True)
+    )
     birth_date = models.DateField(blank=True, null=True)
     # distance in miles
     distance = models.FloatField(default=0.0)
@@ -41,8 +50,10 @@ class User(models.Model):
 
     ## Programmatically set fields
     liked = models.BooleanField(default=False)
+
     # Did this user come from somewhere other than bonfire?
     from_other = models.BooleanField(default=False)
+
     # a dictionary representation from another source
     data = JSONField()
     tinder_id = models.CharField(max_length=25)
@@ -54,11 +65,6 @@ class User(models.Model):
     @property
     def photos(self):
         return self.data['photos']
-
-
-    @property
-    def _data(self):
-        return json.loads(self.data)
 
     @classmethod
     def from_pynder_user(cls, pynder_user):
@@ -80,7 +86,8 @@ class User(models.Model):
 
         kwargs = {k: v for k, v in fields.items() if v}
 
-        return cls(**kwargs)
+        user, created = cls.objects.get_or_create(**kwargs)
+        return user
 
     @classmethod
     def from_mongo(cls, mongodict):
@@ -109,21 +116,41 @@ class User(models.Model):
         user, created = cls.objects.get_or_create(**kwargs)
         return user
 
-    # def get_photos(self, width=None):
-    #     photos_list = []
-    #     photos = self._data['photos']
-    #     for photo in photos:
-    #         if width is None:
-    #             photos_list.append(photo.get("url"))
-    #         else:
-    #             sizes = ["84", "172", "320", "640"]
-    #             if width not in sizes:
-    #                 print("Only support these widths: %s" % sizes)
-    #                 return None
-    #             for p in photo.get("processedFiles", []):
-    #                 if p.get("width", 0) == int(width):
-    #                     photos_list.append(p.get("url", None))
-    #     return photos_list
+
+    def get_tinder_data(self, api=None, token=None):
+        """
+        Return tinder json response from tinder for user.
+        api should already be authenticated with api.auth()
+        :param api: pynder.api.TinderAPI()
+        :param XAuthToken:
+        :return:
+        """
+        if api is None and token is not None:
+            api = TinderAPI()
+            api.auth(token)
+        try:
+            return api.user_info(self.tinder_id)['results']
+        except pynder.errors.RequestError as e:
+            logging.warning(e)
+        return None
+
+    def update_self_from_tinder(self, api=None, token=None):
+        """
+        update self with data from tinder
+        :param api:
+        :param token:
+        :return: True if successful else None
+        """
+
+        tinder_data = self.get_tinder_data(api, token)
+        if tinder_data:
+            self.data = tinder_data
+            self.save()
+            return True
+        return None
+
+    def natural_key(self):
+        return (self.tinder_id)
 
 
 
