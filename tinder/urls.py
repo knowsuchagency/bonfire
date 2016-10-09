@@ -9,14 +9,14 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
         model = User
         fields = ('name',
                   'age',
-                  'photos',
+                  'distance',
+                  'bio',
                   'instagram_username',
                   'mentions_snapchat',
                   'mentions_kik',
                   'mentions_instagram',
-                  'liked',
-                  'tinder_id',
-                  # 'data',
+                  'photos',
+                  'instagram_photos',
                   )
 
 

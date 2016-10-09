@@ -2,12 +2,15 @@ from django.db import models
 from django.contrib.postgres.fields import JSONField, ArrayField
 from functools import partial
 from pynder.api import TinderAPI
+from django.utils import timezone
 import logging
 import pynder.errors
 import attr
+import tinder
+import re
 
 # config logging
-logging.basicConfig(filename='tinder_models.log', level=logging.DEBUG)
+logging.basicConfig(filename='tinder_models.log', level=logging.INFO)
 
 # freeze init to false on attrs
 attr.s = partial(attr.s, init=False)
@@ -26,27 +29,26 @@ class User(models.Model):
     """
     A basic class for a user.
     """
+    class Meta:
+        app_label = 'tinder'
 
 
     # basic information
     name = models.CharField(max_length=30)
     age = models.IntegerField()
     bio = models.TextField(default="")
-    schools = ArrayField(
-        models.CharField(max_length=60, blank=True)
-    )
-    jobs = ArrayField(
-        models.CharField(max_length=60, blank=True)
-    )
+    schools = models.CharField(max_length=200, default="")
+    jobs = models.CharField(max_length=200, default="")
     birth_date = models.DateField(blank=True, null=True)
     # distance in miles
     distance = models.FloatField(default=0.0)
+    liked_date = models.DateField(default=timezone.now)
 
     # social media
     instagram_username = models.CharField(max_length=30, default="None")
-    mentions_snapchat = models.BooleanField(default=False)
-    mentions_kik = models.BooleanField(default=False)
-    mentions_instagram = models.BooleanField(default=False)
+    # mentions_snapchat = models.BooleanField(default=False)
+    # mentions_kik = models.BooleanField(default=False)
+    # mentions_instagram = models.BooleanField(default=False)
 
     ## Programmatically set fields
     liked = models.BooleanField(default=False)
@@ -62,58 +64,32 @@ class User(models.Model):
     def __str__(self):
         return self.__repr__()
 
-    @property
-    def photos(self):
-        return self.data['photos']
 
     @classmethod
-    def from_pynder_user(cls, pynder_user):
+    def from_pynder(cls, pynder_user):
         """
         factory method to initialize from pynder User class
         :param pynder_user: pynder.models.user.User
         :return: cls
         """
         fields = dict(
-            data = pynder_user.data,
+            data = pynder_user._data,
             name = pynder_user.name,
             age = pynder_user.age,
             bio = pynder_user.bio,
             birth_date = pynder_user.birth_date,
-            jobs = pynder_user.jobs,
-            schools = pynder_user.schools,
+            jobs = str(pynder_user.jobs),
+            schools = str(pynder_user.schools),
             instagram_username = pynder_user.instagram_username,
+            distance = pynder_user._data.get('distance_mi'),
         )
 
         kwargs = {k: v for k, v in fields.items() if v}
 
-        user, created = cls.objects.get_or_create(**kwargs)
-        return user
-
-    @classmethod
-    def from_mongo(cls, mongodict):
-        """
-        factory method to import from old mongo db dictionaries
-        :param mongodict: dictionary
-        :return: cls
-
-        """
-        fields = dict(
-            name = mongodict['name'],
-            age = mongodict['age'],
-            bio = mongodict['bio'],
-            distance = mongodict['distance_mi'],
-            instagram_username = mongodict['instagram_username'],
-            mentions_snapchat = mongodict['mentions_snapchat'],
-            mentions_kik = mongodict['mentions_kik'],
-            tinder_id = mongodict['_id'],
-            liked = True,
-            from_other = True,
-            data = mongodict,
-        )
-
-        kwargs = {k: v for k, v in fields.items() if v}
-
-        user, created = cls.objects.get_or_create(**kwargs)
+        try:
+            user, created = cls.objects.get_or_create(**kwargs)
+        except (UnicodeEncodeError) as e:
+            pass
         return user
 
 
@@ -151,6 +127,63 @@ class User(models.Model):
 
     def natural_key(self):
         return (self.tinder_id)
+
+
+    @property
+    def photos(self):
+        return self.get_photos()
+
+    @property
+    def thumbnails(self):
+        return self.get_photos(width="84")
+
+    @property
+    def instagram_photos(self):
+        if self.data.get("instagram", False):
+            return [p for p in self._data['instagram']['photos']]
+
+    def get_photos(self, width=None):
+        photos_list = []
+        for photo in self.data['photos']:
+            if width is None:
+                photos_list.append(photo.get("url"))
+            else:
+                width = str(width)
+                sizes = ["84", "172", "320", "640"]
+                if width not in sizes:
+                    print("Only support these widths: %s" % sizes)
+                    return None
+                for p in photo.get("processedFiles", []):
+                    if p.get("width", 0) == int(width):
+                        photos_list.append(p.get("url", None))
+        return photos_list
+
+    @property
+    def mentions_snapchat(self):
+
+        patterns = [
+            re.compile(r'SC'),
+            re.compile('snapchat', re.I),
+            re.compile(r'\Wsnap\W', re.I)
+        ]
+        return any(p.search(self.bio) for p in patterns)
+
+    @property
+    def mentions_kik(self):
+        patterns = [
+            re.compile(r'kik', re.I),
+        ]
+
+        return any(p.search(self.bio) for p in patterns)
+
+    @property
+    def mentions_instagram(self):
+        patterns = [
+            re.compile(r'IG'),
+            re.compile(r'\Winsta\W', re.I),
+        ]
+
+        return any(p.search(self.bio) for p in patterns)
 
 
 

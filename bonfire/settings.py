@@ -11,17 +11,12 @@ https://docs.djangoproject.com/en/1.10/ref/settings/
 """
 
 import os
-import logging
 from configparser import ConfigParser
 
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# log config
-logging.basicConfig(filename=os.path.join(BASE_DIR, 'settings.log'),
-                    # level=logging.DEBUG
-                    )
 
 
 # Quick-start development settings - unsuitable for production
@@ -84,7 +79,7 @@ WSGI_APPLICATION = 'bonfire.wsgi.application'
 # https://docs.djangoproject.com/en/1.10/ref/settings/#databases
 credentials = ConfigParser()
 credentials.read(os.path.join(BASE_DIR, 'credentials.ini'))
-logging.info("credentials config postgres items:", ' '.join(map(str, credentials.items('postgres'))))
+# logging.info("credentials config postgres items:", ' '.join(map(str, credentials.items('postgres'))))
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
@@ -144,3 +139,6 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
     'PAGE_SIZE': 20,
 }
+
+LOGGING_CONFIG = None
+LOGGING = None
