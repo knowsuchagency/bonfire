@@ -35,8 +35,8 @@ class Session(PynderSession):
         hopeful.like()
         return Session.persist(hopeful)
 
-    def like_several(self):
-        hopefuls = self.nearby_users()
+    def like_several(self, hopefuls=None):
+        hopefuls = hopefuls or self.nearby_users()
         while hopefuls:
             # make sure we are not using likes too quickly
             if self.can_like_in > 0:
@@ -70,10 +70,12 @@ def get_default_token():
 
 
 parser = argparse.ArgumentParser(description="Tinder utilities")
+
 parser.add_argument('-t',
                     '--token', dest='token',
                     default=get_default_token(),
                     help='Facebook token')
+
 parser.add_argument('--like-all',
                     dest='method',
                     action='store_const',
