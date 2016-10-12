@@ -1,15 +1,15 @@
-import sys
-import os
-sys.path.extend(['/Users/stephanfitzpatrick/Dropbox/projects/bonfire'])
+import sys; sys.path.append('/Users/stephanfitzpatrick/Dropbox/projects/bonfire')
 
 from pathlib import Path
 from pynder import Session as PynderSession
 from configparser import ConfigParser
+from operator import methodcaller
 import bonfire.settings
 import django
 import logging
+import os
+import argparse
 
-# settings.configure(default_settings=bonfire.settings)
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'bonfire.settings')
 django.setup()
 
@@ -25,6 +25,7 @@ logging.basicConfig(
 
 class Session(PynderSession):
 
+
     @staticmethod
     def persist(hopeful):
         return User.from_pynder(hopeful)
@@ -34,7 +35,8 @@ class Session(PynderSession):
         hopeful.like()
         return Session.persist(hopeful)
 
-    def like_several(self, hopefuls):
+    def like_several(self):
+        hopefuls = self.nearby_users()
         while hopefuls:
             # make sure we are not using likes too quickly
             if self.can_like_in > 0:
@@ -50,17 +52,41 @@ class Session(PynderSession):
             hopefuls = self.nearby_users()
 
 
+def get_default_token():
+    """
+    Return the token from the ini file or None
+    :return: str
+    """
+
+    token = None
+    try:
+        credentials_path = Path(bonfire.settings.BASE_DIR, 'credentials.ini')
+        config = ConfigParser()
+        config.read(str(credentials_path))
+        token = config.get('facebook', 'token')
+    except Exception as e:
+        logging.warning(e)
+    return token
+
+
+parser = argparse.ArgumentParser(description="Tinder utilities")
+parser.add_argument('-t',
+                    '--token', dest='token',
+                    default=get_default_token(),
+                    help='Facebook token')
+parser.add_argument('--like-all',
+                    dest='method',
+                    action='store_const',
+                    const='like_until_you_drop',
+                    default='like_several',
+                    help='Like all nearby users (default: only a few)')
+
 
 if __name__ == "__main__":
 
-    credentials_path = Path(bonfire.settings.BASE_DIR, 'credentials.ini')
-    config = ConfigParser()
-    config.read(str(credentials_path))
-    token = config.get('facebook', 'token')
+    namespace = parser.parse_args()
+    command = methodcaller(namespace.method)
 
-    session = Session(token)
+    session = Session(namespace.token)
+    command(session)
 
-    # let's start by just liking 10
-    hopefuls = session.nearby_users()
-    session.like_several(hopefuls)
-    print('done')
