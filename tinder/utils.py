@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import sys; sys.path.append('/Users/stephanfitzpatrick/Dropbox/projects/bonfire')
 
 from pathlib import Path
@@ -44,6 +46,7 @@ class Session(PynderSession):
             hopeful = hopefuls.pop()
             persisted = Session.like_and_persist(hopeful)
             logging.info("liked and saved: {}".format(persisted))
+            # yield persisted
 
     def like_until_you_drop(self):
         hopefuls = self.nearby_users()
@@ -69,22 +72,22 @@ def get_default_token():
     return token
 
 
-parser = argparse.ArgumentParser(description="Tinder utilities")
-
-parser.add_argument('-t',
-                    '--token', dest='token',
-                    default=get_default_token(),
-                    help='Facebook token')
-
-parser.add_argument('--like-all',
-                    dest='method',
-                    action='store_const',
-                    const='like_until_you_drop',
-                    default='like_several',
-                    help='Like all nearby users (default: only a few)')
-
 
 if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser(description="Tinder utilities")
+
+    parser.add_argument('-t',
+                        '--token', dest='token',
+                        default=get_default_token(),
+                        help='Facebook token')
+
+    parser.add_argument('--like-all',
+                        dest='method',
+                        action='store_const',
+                        const='like_until_you_drop',
+                        default='like_several',
+                        help='Like all nearby users (default: only a few)')
 
     namespace = parser.parse_args()
     command = methodcaller(namespace.method)

@@ -3,6 +3,8 @@ from django.contrib.postgres.fields import JSONField, ArrayField
 from functools import partial
 from pynder.api import TinderAPI
 from django.utils import timezone
+from datetime import date
+from dateutil.parser import parse as parse_date
 import logging
 import pynder.errors
 import attr
@@ -46,12 +48,12 @@ class User(models.Model):
 
     # social media
     instagram_username = models.CharField(max_length=30, default="None")
-    # mentions_snapchat = models.BooleanField(default=False)
-    # mentions_kik = models.BooleanField(default=False)
-    # mentions_instagram = models.BooleanField(default=False)
+    mentions_snapchat = models.BooleanField(default=False)
+    mentions_kik = models.BooleanField(default=False)
+    mentions_instagram = models.BooleanField(default=False)
 
     ## Programmatically set fields
-    liked = models.BooleanField(default=False)
+    liked = models.BooleanField(default=True)
 
     # Did this user come from somewhere other than bonfire?
     from_other = models.BooleanField(default=False)
@@ -82,6 +84,7 @@ class User(models.Model):
             schools = str(pynder_user.schools),
             instagram_username = pynder_user.instagram_username,
             distance = pynder_user._data.get('distance_mi'),
+            tinder_id = pynder_user._data['_id'],
         )
 
         kwargs = {k: v for k, v in fields.items() if v}
@@ -128,6 +131,31 @@ class User(models.Model):
 
     def natural_key(self):
         return (self.tinder_id)
+
+    @classmethod
+    def from_tinder_dict(cls, d):
+
+        def age_from_bday(birth_date):
+            today = date.now()
+            return (today.year - birth_date.year -
+                    ((today.month, today.day) <
+                     (birth_date.month, birth_date.day)))
+
+        kwargs = dict(
+            data = d,
+            name = d['name'],
+            age = age_from_bday(d['age']),
+            bio = d['bio'],
+            birth_date = d['birth_date'],
+            jobs = d['jobs'],
+            schools = d['schools'],
+            instagram_username = d.get('instagram_username', {}).get('username'),
+            distance = d['distance_mi'],
+            tinder_id = d['_id'],
+        )
+
+        return cls(**kwargs)
+
 
 
     @property
@@ -185,6 +213,43 @@ class User(models.Model):
         ]
 
         return any(p.search(self.bio) for p in patterns)
+
+
+def mentions_social(app, bio):
+    """
+    Return true if a bio mentions a certain app.
+    :param app: snapchat || instagram || kik
+    :param bio: bio string
+    :return: bool or None
+    """
+    snapchat_patterns = [
+        re.compile(r'SC'),
+        re.compile('snapchat', re.I),
+        re.compile(r'\Wsnap\W', re.I)
+    ]
+
+    instagram_patterns = [
+        re.compile(r'IG'),
+        re.compile(r'\Winsta\W', re.I),
+    ]
+
+    kik_patterns = [
+        re.compile(r'kik', re.I),
+    ]
+
+    search = lambda patterns: any(p.search(bio) for p in patterns)
+    if app == "snapchat":
+        return search(snapchat_patterns)
+    elif app == "instagram":
+        return search(instagram_patterns)
+    elif app == "kik":
+        return search(kik_patterns)
+    else:
+        print("app parameter must be a string: {instagram} || {snapchat}} || {kik}")
+        return None
+
+
+
 
 
 
