@@ -214,39 +214,39 @@ class User(models.Model):
 
         return any(p.search(self.bio) for p in patterns)
 
+    @staticmethod
+    def mentions_social(app, bio):
+        """
+        Return true if a bio mentions a certain app.
+        :param app: snapchat || instagram || kik
+        :param bio: bio string
+        :return: bool or None
+        """
+        snapchat_patterns = [
+            re.compile(r'SC'),
+            re.compile('snapchat', re.I),
+            re.compile(r'\Wsnap\W', re.I)
+        ]
 
-def mentions_social(app, bio):
-    """
-    Return true if a bio mentions a certain app.
-    :param app: snapchat || instagram || kik
-    :param bio: bio string
-    :return: bool or None
-    """
-    snapchat_patterns = [
-        re.compile(r'SC'),
-        re.compile('snapchat', re.I),
-        re.compile(r'\Wsnap\W', re.I)
-    ]
+        instagram_patterns = [
+            re.compile(r'IG'),
+            re.compile(r'\Winsta\W', re.I),
+        ]
 
-    instagram_patterns = [
-        re.compile(r'IG'),
-        re.compile(r'\Winsta\W', re.I),
-    ]
+        kik_patterns = [
+            re.compile(r'kik', re.I),
+        ]
 
-    kik_patterns = [
-        re.compile(r'kik', re.I),
-    ]
-
-    search = lambda patterns: any(p.search(bio) for p in patterns)
-    if app == "snapchat":
-        return search(snapchat_patterns)
-    elif app == "instagram":
-        return search(instagram_patterns)
-    elif app == "kik":
-        return search(kik_patterns)
-    else:
-        print("app parameter must be a string: {instagram} || {snapchat}} || {kik}")
-        return None
+        search = lambda patterns: any(p.search(bio) for p in patterns)
+        if app == "snapchat":
+            return search(snapchat_patterns)
+        elif app == "instagram":
+            return search(instagram_patterns)
+        elif app == "kik":
+            return search(kik_patterns)
+        else:
+            print("app parameter must be a string: {instagram} || {snapchat}} || {kik}")
+            return None
 
 
 
