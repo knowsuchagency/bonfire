@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.postgres.fields import JSONField, ArrayField
+from django.contrib.postgres.fields import JSONField
 from functools import partial
 from pynder.api import TinderAPI
 from django.utils import timezone
@@ -26,7 +26,7 @@ def fields(*args):
     return {arg: attr.ib() for arg in args}
 
 
-@attr.s(these=fields("name", "age", "instagram_username"))
+# @attr.s(these=fields("name", "age", "instagram_username"))
 class User(models.Model):
     """
     A basic class for a user.
@@ -39,8 +39,8 @@ class User(models.Model):
     name = models.CharField(max_length=30)
     age = models.IntegerField()
     bio = models.TextField(default="")
-    schools = models.CharField(max_length=200, default="")
-    jobs = models.CharField(max_length=200, default="")
+    schools = models.CharField(max_length=200, blank=True)
+    jobs = models.CharField(max_length=200, blank=True)
     birth_date = models.DateField(blank=True, null=True)
     # distance in miles
     distance = models.FloatField(default=0.0)
@@ -49,14 +49,12 @@ class User(models.Model):
     # social media
     instagram_username = models.CharField(max_length=30, default="None")
     mentions_snapchat = models.BooleanField(default=False, blank=True)
-    mentions_kik = models.BooleanField(default=False, blank=True)
     mentions_instagram = models.BooleanField(default=False, blank=True)
+    mentions_kik = models.BooleanField(default=False, blank=True)
 
     ## Programmatically set fields
     liked = models.BooleanField(default=True)
 
-    # Did this user come from somewhere other than bonfire?
-    from_other = models.BooleanField(default=False)
 
     # a dictionary representation from another source
     data = JSONField()
@@ -186,33 +184,6 @@ class User(models.Model):
                     if p.get("width", 0) == int(width):
                         photos_list.append(p.get("url", None))
         return photos_list
-
-    @property
-    def mentions_snapchat(self):
-
-        patterns = [
-            re.compile(r'SC'),
-            re.compile('snapchat', re.I),
-            re.compile(r'\Wsnap\W', re.I)
-        ]
-        return any(p.search(self.bio) for p in patterns)
-
-    @property
-    def mentions_kik(self):
-        patterns = [
-            re.compile(r'kik', re.I),
-        ]
-
-        return any(p.search(self.bio) for p in patterns)
-
-    @property
-    def mentions_instagram(self):
-        patterns = [
-            re.compile(r'IG'),
-            re.compile(r'\Winsta\W', re.I),
-        ]
-
-        return any(p.search(self.bio) for p in patterns)
 
     @staticmethod
     def mentions_social(app, bio):
