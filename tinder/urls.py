@@ -12,25 +12,12 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
                   'distance',
                   'bio',
                   'instagram_username',
-                  'mentions_snapchat',
-                  'mentions_kik',
-                  'mentions_instagram',
+                  'snapchat_in_bio',
+                  'instagram_in_bio',
+                  'kik_in_bio',
                   'photos',
                   'instagram_photos',
                   )
-
-class UserFilter(filters.FilterSet):
-
-
-    def filter_snapchatters(self, queryset, name):
-        print(queryset, name)
-        return list(u for u in queryset if u.mentions_snapchat)
-
-    mentions_snapchat = filters.BooleanFilter(method=filter_snapchatters)
-
-    class Meta:
-        model = User
-        fields = ('name', 'age', 'distance', 'mentions_snapchat',)
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -38,7 +25,7 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     filter_backends = (filters.DjangoFilterBackend,)
     # filter_class = UserFilter
-    filter_fields = ('name', 'age', 'distance', 'mentions_snapchat',)
+    filter_fields = ('name', 'age', 'distance', 'snapchat_in_bio',)
 
 
 

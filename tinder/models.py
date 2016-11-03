@@ -26,7 +26,7 @@ def fields(*args):
     return {arg: attr.ib() for arg in args}
 
 
-# @attr.s(these=fields("name", "age", "instagram_username"))
+@attr.s(these=fields("name", "age", "instagram_username"))
 class User(models.Model):
     """
     A basic class for a user.
@@ -48,9 +48,9 @@ class User(models.Model):
 
     # social media
     instagram_username = models.CharField(max_length=30, default="None")
-    mentions_snapchat = models.BooleanField(default=False, blank=True)
-    mentions_instagram = models.BooleanField(default=False, blank=True)
-    mentions_kik = models.BooleanField(default=False, blank=True)
+    snapchat_in_bio = models.BooleanField(default=False)
+    instagram_in_bio = models.BooleanField(default=False)
+    kik_in_bio = models.BooleanField(default=False)
 
     ## Programmatically set fields
     liked = models.BooleanField(default=True)
