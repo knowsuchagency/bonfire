@@ -32,9 +32,9 @@ class Migration(migrations.Migration):
                 ('from_other', models.BooleanField(default=False)),
                 ('data', django.contrib.postgres.fields.jsonb.JSONField()),
                 ('tinder_id', models.CharField(max_length=25)),
-                ('mentions_snapchat', models.BooleanField(default=False)),
-                ('mentions_kik', models.BooleanField(default=False)),
-                ('mentions_instagram', models.BooleanField(default=False)),
+                ('mentions_snapchat', models.BooleanField(default=False, blank=True)),
+                ('mentions_kik', models.BooleanField(default=False, blank=True)),
+                ('mentions_instagram', models.BooleanField(default=False, blank=True)),
             ],
         ),
     ]

@@ -48,9 +48,9 @@ class User(models.Model):
 
     # social media
     instagram_username = models.CharField(max_length=30, default="None")
-    mentions_snapchat = models.BooleanField(default=False)
-    mentions_kik = models.BooleanField(default=False)
-    mentions_instagram = models.BooleanField(default=False)
+    mentions_snapchat = models.BooleanField(default=False, blank=True)
+    mentions_kik = models.BooleanField(default=False, blank=True)
+    mentions_instagram = models.BooleanField(default=False, blank=True)
 
     ## Programmatically set fields
     liked = models.BooleanField(default=True)
